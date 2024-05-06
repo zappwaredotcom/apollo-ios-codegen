@@ -15,7 +15,7 @@ struct SelectionSetTemplate {
 
   private let nameCache: SelectionSetNameCache
 
-  var isMutable: Bool { definition.isMutable }
+  var isMutable: Bool { true }
 
   init(
     definition: IR.Definition,

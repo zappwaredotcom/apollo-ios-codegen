@@ -8,7 +8,7 @@ extension IR.Definition {
     "\(config.schemaNamespace.firstUppercased).\(if: isMutable, "Mutable")SelectionSet"
   }
 
-  var isMutable: Bool { self.isLocalCacheMutation }
+  var isMutable: Bool { true }
 
 }
 
