@@ -7,7 +7,7 @@ import Utilities
 
 struct SelectionSetTemplate {
 
-  let definition: IR.Definition
+  let definition: any IR.Definition
   let generateInitializers: Bool
   let config: ApolloCodegen.ConfigurationContext
   let nonFatalErrorRecorder: ApolloCodegen.NonFatalError.Recorder
@@ -18,7 +18,7 @@ struct SelectionSetTemplate {
   var isMutable: Bool { true }
 
   init(
-    definition: IR.Definition,
+    definition: any IR.Definition,
     generateInitializers: Bool,
     config: ApolloCodegen.ConfigurationContext,
     nonFatalErrorRecorder: ApolloCodegen.NonFatalError.Recorder,
@@ -156,7 +156,7 @@ struct SelectionSetTemplate {
           pluralizer: config.pluralizer))
     \(if: config.options.schemaDocumentation == .include, """
       ///
-      /// Parent Type: `\(selectionSet.typeInfo.parentType.formattedName)`
+      /// Parent Type: `\(selectionSet.typeInfo.parentType.render(as: .typename))`
       """)
     """
   }
@@ -236,7 +236,7 @@ struct SelectionSetTemplate {
   private func ParentTypeTemplate(_ type: GraphQLCompositeType) -> String {
     """
     \(renderAccessControl())\
-    static var __parentType: \(config.ApolloAPITargetName).ParentType { \
+    static var __parentType: any \(config.ApolloAPITargetName).ParentType { \
     \(GeneratedSchemaTypeReference(type)) }
     """
   }
@@ -259,7 +259,7 @@ struct SelectionSetTemplate {
   }
 
   private func GeneratedSchemaTypeReference(_ type: GraphQLCompositeType) -> TemplateString {
-    "\(config.schemaNamespace.firstUppercased).\(type.schemaTypesNamespace).\(type.formattedName)"
+    "\(config.schemaNamespace.firstUppercased).\(type.schemaTypesNamespace).\(type.render(as: .typename))"
   }
 
   // MARK: - Selections
@@ -1076,7 +1076,7 @@ extension IR.ScopeCondition {
     } else {
       return TemplateString(
         """
-        \(ifLet: type, { "As\($0.formattedName)" })\
+        \(ifLet: type, { "As\($0.render(as: .typename))" })\
         \(ifLet: conditions, { "If\($0.typeNameComponents)"})
         """
       ).description

@@ -210,7 +210,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
 
     /// `Decodable` implementation to allow for properties to be optional in the encoded JSON with
     /// specified defaults when not present.
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       let values = try decoder.container(keyedBy: CodingKeys.self)
       try throwIfContainsUnexpectedKey(container: values, type: Self.self, decoder: decoder)
       schemaTypes = try values.decode(
@@ -232,7 +232,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       )
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
 
       try container.encode(self.schemaTypes, forKey: .schemaTypes)
@@ -294,7 +294,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       /// location.
       case other
 
-      public init(from decoder: Decoder) throws {
+      public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         guard let key = container.allKeys.first else {
@@ -344,7 +344,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
     /// control the visibility of generated code, defaults to `.public`.
     case absolute(path: String, accessModifier: AccessModifier = .public)
 
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
 
       guard let key = container.allKeys.first else {
@@ -414,7 +414,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
     /// will fail.
     case swiftPackage(targetName: String? = nil)
 
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
 
       guard let key = container.allKeys.first else {
@@ -468,6 +468,8 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
     public let selectionSetInitializers: SelectionSetInitializers
     /// How to generate the operation documents for your generated operations.
     public let operationDocumentFormat: OperationDocumentFormat
+    /// Customization options to be applie to the schema during code generation.
+    public let schemaCustomization: SchemaCustomization
     /// Generate import statements that are compatible with including `Apollo` via Cocoapods.
     ///
     /// Cocoapods bundles all files from subspecs into the main target for a pod. This means that
@@ -514,6 +516,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       public static let schemaDocumentation: Composition = .include
       public static let selectionSetInitializers: SelectionSetInitializers = [.localCacheMutations]
       public static let operationDocumentFormat: OperationDocumentFormat = .definition
+      public static let schemaCustomization: SchemaCustomization = .init()
       public static let cocoapodsCompatibleImportStatements: Bool = false
       public static let warningsOnDeprecatedUsage: Composition = .include
       public static let conversionStrategies: ConversionStrategies = .init()
@@ -546,6 +549,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       schemaDocumentation: Composition = Default.schemaDocumentation,
       selectionSetInitializers: SelectionSetInitializers = Default.selectionSetInitializers,
       operationDocumentFormat: OperationDocumentFormat = Default.operationDocumentFormat,
+      schemaCustomization: SchemaCustomization = Default.schemaCustomization,
       cocoapodsCompatibleImportStatements: Bool = Default.cocoapodsCompatibleImportStatements,
       warningsOnDeprecatedUsage: Composition = Default.warningsOnDeprecatedUsage,
       conversionStrategies: ConversionStrategies = Default.conversionStrategies,
@@ -557,6 +561,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       self.schemaDocumentation = schemaDocumentation
       self.selectionSetInitializers = selectionSetInitializers
       self.operationDocumentFormat = operationDocumentFormat
+      self.schemaCustomization = schemaCustomization
       self.cocoapodsCompatibleImportStatements = cocoapodsCompatibleImportStatements
       self.warningsOnDeprecatedUsage = warningsOnDeprecatedUsage
       self.conversionStrategies = conversionStrategies
@@ -574,6 +579,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       case selectionSetInitializers
       case apqs
       case operationDocumentFormat
+      case schemaCustomization
       case cocoapodsCompatibleImportStatements
       case warningsOnDeprecatedUsage
       case conversionStrategies
@@ -581,7 +587,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       case markOperationDefinitionsAsFinal
     }
 
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       let values = try decoder.container(keyedBy: CodingKeys.self)
       try throwIfContainsUnexpectedKey(container: values, type: Self.self, decoder: decoder)
 
@@ -614,6 +620,11 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
         forKey: .apqs
       )?.operationDocumentFormat ??
       Default.operationDocumentFormat
+      
+      schemaCustomization = try values.decodeIfPresent(
+        SchemaCustomization.self,
+        forKey: .schemaCustomization
+      ) ?? Default.schemaCustomization
 
       cocoapodsCompatibleImportStatements = try values.decodeIfPresent(
         Bool.self,
@@ -641,7 +652,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       ) ?? Default.markOperationDefinitionsAsFinal
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
 
       try container.encode(self.additionalInflectionRules, forKey: .additionalInflectionRules)
@@ -649,6 +660,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       try container.encode(self.schemaDocumentation, forKey: .schemaDocumentation)
       try container.encode(self.selectionSetInitializers, forKey: .selectionSetInitializers)
       try container.encode(self.operationDocumentFormat, forKey: .operationDocumentFormat)
+      try container.encode(self.schemaCustomization, forKey: .schemaCustomization)
       try container.encode(self.cocoapodsCompatibleImportStatements, forKey: .cocoapodsCompatibleImportStatements)
       try container.encode(self.warningsOnDeprecatedUsage, forKey: .warningsOnDeprecatedUsage)
       try container.encode(self.conversionStrategies, forKey: .conversionStrategies)
@@ -744,7 +756,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
     }
 
     @available(*, deprecated) // Deprecation attribute added to supress warning.
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       let values = try decoder.container(keyedBy: CodingKeys.self)
       guard values.allKeys.first != nil else {
         throw DecodingError.typeMismatch(Self.self, DecodingError.Context.init(
@@ -804,7 +816,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       case operationId
     }
 
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       self = OperationDocumentFormat(rawValue: 0)
 
       var container = try decoder.unkeyedContainer()
@@ -828,7 +840,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       }
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
       var container = encoder.unkeyedContainer()
       if self.contains(.definition) {
         try container.encode(CodingKeys.definition.rawValue)
@@ -931,7 +943,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
       case legacySafelistingCompatibleOperations
     }
 
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
       let values = try decoder.container(keyedBy: CodingKeys.self)
 
       legacySafelistingCompatibleOperations = try values.decodeIfPresent(
@@ -1015,7 +1027,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
     case operationManifest
   }
 
-  public func encode(to encoder: Encoder) throws {
+  public func encode(to encoder: any Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
 
     try container.encode(self.schemaNamespace, forKey: .schemaNamespace)
@@ -1033,7 +1045,7 @@ public struct ApolloCodegenConfiguration: Codable, Equatable {
     }
   }
 
-  public init(from decoder: Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     try throwIfContainsUnexpectedKey(container: values, type: Self.self, decoder: decoder)
 
@@ -1177,7 +1189,7 @@ extension ApolloCodegenConfiguration.SelectionSetInitializers {
     case definitionsNamed
   }
 
-  public init(from decoder: Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     try throwIfContainsUnexpectedKey(container: values, type: Self.self, decoder: decoder)
     var options: Options = []
@@ -1198,7 +1210,7 @@ extension ApolloCodegenConfiguration.SelectionSetInitializers {
       forKey: .definitionsNamed) ?? []
   }
 
-  public func encode(to encoder: Encoder) throws {
+  public func encode(to encoder: any Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
 
     func encodeIfPresent(option: Options, forKey key: CodingKeys) throws {
@@ -1368,6 +1380,7 @@ extension ApolloCodegenConfiguration.OutputOptions {
     self.conversionStrategies = conversionStrategies
     self.pruneGeneratedFiles = pruneGeneratedFiles
     self.markOperationDefinitionsAsFinal = markOperationDefinitionsAsFinal
+    self.schemaCustomization = Default.schemaCustomization
   }
   
   /// Deprecated initializer.
@@ -1417,6 +1430,7 @@ extension ApolloCodegenConfiguration.OutputOptions {
     self.conversionStrategies = conversionStrategies
     self.pruneGeneratedFiles = pruneGeneratedFiles
     self.markOperationDefinitionsAsFinal = markOperationDefinitionsAsFinal
+    self.schemaCustomization = Default.schemaCustomization
   }
 
   /// Whether the generated operations should use Automatic Persisted Queries.
@@ -1502,7 +1516,7 @@ private struct AnyCodingKey: CodingKey {
 func throwIfContainsUnexpectedKey<T, C: CodingKey & CaseIterable>(
   container: KeyedDecodingContainer<C>,
   type: T.Type,
-  decoder: Decoder
+  decoder: any Decoder
 ) throws {
   // Map all keys from the input object
   let allKeys = Set(try decoder.container(keyedBy: AnyCodingKey.self).allKeys.map(\.stringValue))
