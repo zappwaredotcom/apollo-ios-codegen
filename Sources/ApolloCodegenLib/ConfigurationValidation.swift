@@ -33,12 +33,16 @@ extension ApolloCodegen.ConfigurationContext {
       throw ApolloCodegen.Error.schemaNameConflict(name: self.schemaNamespace)
     }
 
-    if case .swiftPackage = self.output.testMocks,
-       self.output.schemaTypes.moduleType != .swiftPackageManager {
-      throw ApolloCodegen.Error.testMocksInvalidSwiftPackageConfiguration
+    if case .swiftPackage = self.output.testMocks {
+      switch self.output.schemaTypes.moduleType {
+      case .swiftPackage(_), .swiftPackageManager:
+        break
+      default:
+        throw ApolloCodegen.Error.testMocksInvalidSwiftPackageConfiguration
+      }
     }
 
-    if case .swiftPackageManager = self.output.schemaTypes.moduleType,
+    if case .swiftPackage = self.output.schemaTypes.moduleType,
        self.options.cocoapodsCompatibleImportStatements == true {
       throw ApolloCodegen.Error.invalidConfiguration(message: """
         cocoapodsCompatibleImportStatements cannot be set to 'true' when the output schema types \
